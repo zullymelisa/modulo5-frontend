@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirección - URL Shortener</title>
+    <link rel="stylesheet" href="index.css">
+    <style>
+      /* Small adjustments to center the loading card on this standalone page */
+      body { background: var(--bg, #f7f9fb); }
+    </style>
+</head>
+<body>
+    <div class="loading-page" id="loadingPage">
+        <div class="loading-card">
+            <div class="loading-content">
+                <div class="loading-spinner"></div>
+                <div class="loading-text">Redirigiendo...</div>
+                <div class="countdown" id="countdown">5</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="not-found-page" id="notFoundPage" style="display:none;">
+        <div class="not-found-card">
+            <div class="not-found-content">
+                <div class="not-found-icon">😞</div>
+                <h1 class="not-found-title">¡Oops!</h1>
+                <p class="not-found-message">La página que buscas no existe o el enlace ha expirado.</p>
+                <button class="btn-home" id="homeBtn">🏠 Volver al inicio</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+      const API_CONFIG = {
+        REDIRECT_ENDPOINT: 'https://hwk68la162.execute-api.us-east-1.amazonaws.com',
+        BASE_SHORT_URL: 'https://d1w0l832are5e0.cloudfront.net/short'
+      };
+
+      let _redirectInterval = null;
+
+      window.addEventListener('DOMContentLoaded', () => {
+        // try to extract code from path: works for /short/abc or /abc
+        const path = window.location.pathname;
+        const shortMatch = path.match(/\/short\/([a-zA-Z0-9]+)/) || path.match(/\/([a-zA-Z0-9]+)$/);
+        const code = shortMatch ? shortMatch[1] : null;
+        if (!code) return showNotFound();
+        handleRedirect(code);
+      });
+
+      async function handleRedirect(codigo) {
+        document.getElementById('loadingPage').classList.add('show');
+        try {
+          const response = await fetch(`${API_CONFIG.REDIRECT_ENDPOINT}/${codigo}`);
+          if (!response.ok) throw new Error('URL not found');
+          const data = await response.json();
+          const realUrl = data.url;
+          if (!realUrl) throw new Error('No url');
+
+          let countdown = 5;
+          const countdownEl = document.getElementById('countdown');
+          const progressFill = document.getElementById('progressFill');
+
+          _redirectInterval = setInterval(() => {
+            countdown--;
+            countdownEl.textContent = countdown;
+            progressFill.style.width = `${(5 - countdown) * 20}%`;
+            if (countdown <= 0) {
+              clearInterval(_redirectInterval);
+              window.location.href = realUrl;
+            }
+          }, 1000);
+
+        } catch (err) {
+          console.error(err);
+          if (_redirectInterval) { clearInterval(_redirectInterval); _redirectInterval = null; }
+          showNotFound();
+        }
+      }
+
+      function showNotFound(){
+        document.getElementById('loadingPage').classList.remove('show');
+        document.getElementById('notFoundPage').style.display = 'block';
+        document.getElementById('homeBtn').addEventListener('click', () => { window.location.href = '/'; });
+      }
+    </script>
+</body>
+</html>
