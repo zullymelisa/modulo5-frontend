@@ -3,6 +3,8 @@
 .terraform.lock.hcl
 *.tfstate
 *.tfstate.*
+# Ignore local terraform config directory to avoid committing state and configs
+terraform/
 # *.tfvars  # Commented out - terraform.tfvars is tracked for automation
 *.tfvars.json
 crash.log
