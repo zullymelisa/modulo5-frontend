@@ -34,7 +34,7 @@ jobs:
         continue-on-error: true
 
       - name: Terraform Init
-        run: terraform init -backend=false
+        run: terraform init -backend=false -input=false
         working-directory: ./terraform
 
       - name: Terraform Validate
@@ -65,15 +65,15 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: 🚀 Terraform Init
-        run: terraform init
+        run: terraform init -input=false
         working-directory: ./terraform
 
       - name: Terraform Plan
-        run: terraform plan -out=tfplan -var-file="terraform.tfvars"
+        run: terraform plan -input=false -lock=false -out=tfplan
         working-directory: ./terraform
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan
+        run: terraform apply -input=false -lock=false -auto-approve tfplan
         working-directory: ./terraform
 
       - name: Get S3 Bucket Name

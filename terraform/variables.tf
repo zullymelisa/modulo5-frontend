@@ -7,6 +7,7 @@ variable "aws_region" {
 variable "bucket_name" {
   description = "Nombre único del bucket S3 para el frontend"
   type        = string
+  default     = "url-shortener-frontend-asus-20251125-01"
   # Ejemplo: "url-shortener-frontend-modulo5-tunombre"
   # Debe ser único globalmente en AWS
 }
