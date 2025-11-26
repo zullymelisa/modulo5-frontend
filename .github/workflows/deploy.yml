@@ -20,24 +20,24 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: 📥 Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: 🔧 Setup Terraform
+      - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ env.TERRAFORM_VERSION }}
 
-      - name: ✅ Terraform Format Check
+      - name: Terraform Format Check
         run: terraform fmt -check -recursive
         working-directory: ./terraform
         continue-on-error: true
 
-      - name: 🔍 Terraform Init
+      - name: Terraform Init
         run: terraform init -backend=false
         working-directory: ./terraform
 
-      - name: ✅ Terraform Validate
+      - name: Terraform Validate
         run: terraform validate
         working-directory: ./terraform
 
@@ -48,16 +48,16 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     
     steps:
-      - name: 📥 Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: 🔧 Setup Terraform
+      - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ env.TERRAFORM_VERSION }}
           terraform_wrapper: false
 
-      - name: 🔐 Configure AWS Credentials
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -68,29 +68,30 @@ jobs:
         run: terraform init
         working-directory: ./terraform
 
-      - name: 📋 Terraform Plan
+      - name: Terraform Plan
         run: terraform plan -out=tfplan
         working-directory: ./terraform
 
-      - name: 🏗️ Terraform Apply
+      - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
         working-directory: ./terraform
 
-      - name: 📤 Get S3 Bucket Name
+      - name: Get S3 Bucket Name
         id: bucket
         run: |
           BUCKET_NAME=$(terraform output -raw s3_bucket_name)
           echo "bucket_name=$BUCKET_NAME" >> $GITHUB_OUTPUT
         working-directory: ./terraform
 
-      - name: 🔄 Update API Endpoints in HTML
+      - name: Update API Endpoints in HTML
         run: |
-          # Actualiza las URLs de la API en el HTML
-          sed -i "s|SHORTEN_ENDPOINT: '.*'|SHORTEN_ENDPOINT: '${{ secrets.API_SHORTEN_ENDPOINT }}'|g" index.html
-          sed -i "s|REDIRECT_ENDPOINT: '.*'|REDIRECT_ENDPOINT: '${{ secrets.API_REDIRECT_ENDPOINT }}'|g" index.html
-          sed -i "s|BASE_SHORT_URL: '.*'|BASE_SHORT_URL: 'https://${{ secrets.CLOUDFRONT_DOMAIN }}'|g" index.html
+          # Actualiza las URLs de la API en el HTML usando sed
+          sed -i "s|SHORTEN_ENDPOINT: '[^']*'|SHORTEN_ENDPOINT: '${{ secrets.API_SHORTEN_ENDPOINT }}'|g" index.html
+          sed -i "s|REDIRECT_ENDPOINT: '[^']*'|REDIRECT_ENDPOINT: '${{ secrets.API_REDIRECT_ENDPOINT }}'|g" index.html
+          sed -i "s|BASE_SHORT_URL: '[^']*'|BASE_SHORT_URL: 'https://${{ secrets.CLOUDFRONT_DOMAIN }}'|g" index.html
+          echo "✅ API endpoints updated"
 
-      - name: 📦 Upload to S3
+      - name: Upload to S3
         run: |
           aws s3 sync . s3://${{ steps.bucket.outputs.bucket_name }}/ \
             --exclude ".git/*" \
@@ -101,20 +102,20 @@ jobs:
             --delete \
             --cache-control "public, max-age=3600"
 
-      - name: 📤 Get CloudFront Distribution ID
+      - name: Get CloudFront Distribution ID
         id: cloudfront
         run: |
           DISTRIBUTION_ID=$(terraform output -raw cloudfront_distribution_id)
           echo "distribution_id=$DISTRIBUTION_ID" >> $GITHUB_OUTPUT
         working-directory: ./terraform
 
-      - name: 🔄 Invalidate CloudFront Cache
+      - name: Invalidate CloudFront Cache
         run: |
           aws cloudfront create-invalidation \
             --distribution-id ${{ steps.cloudfront.outputs.distribution_id }} \
             --paths "/*"
 
-      - name: 📤 Get Deployment URL
+      - name: Get Deployment URL
         id: deployment
         run: |
           CLOUDFRONT_URL=$(terraform output -raw cloudfront_url)
@@ -124,7 +125,7 @@ jobs:
           echo "**Live URL:** $CLOUDFRONT_URL" >> $GITHUB_STEP_SUMMARY
         working-directory: ./terraform
 
-      - name: 💬 Comment PR with Deployment URL
+      - name: Comment PR with Deployment URL
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
