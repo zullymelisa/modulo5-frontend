@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Shortener - Acorta tus enlaces</title>
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <!-- Main Form Page -->
+    <div class="container" id="mainPage">
+        <div class="header">
+            <div class="logo">🔗</div>
+            <h1>URL Shortener</h1>
+            <p class="subtitle">Acorta tus enlaces largos en segundos</p>
+        </div>
+
+        <form id="shortenForm">
+            <div class="input-group">
+                <label for="urlInput">Ingresa tu URL</label>
+                <input 
+                    type="url" 
+                    id="urlInput" 
+                    placeholder="https://ejemplo.com/tu-url-muy-larga" 
+                    required
+                >
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="shortenBtn">
+                <span>🚀</span>
+                <span>Acortar URL</span>
+            </button>
+        </form>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Generando tu enlace corto...</p>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="result-box" id="resultBox">
+            <div class="result-label">✨ Tu URL acortada:</div>
+            <div class="result-url">
+                <a href="#" target="_blank" id="shortUrl"></a>
+                <button class="btn-copy" id="copyBtn">Copiar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Page (5 seconds) -->
+    <div class="loading-page" id="loadingPage">
+        <div class="loading-card">
+            <div class="loading-content">
+                <div class="loading-spinner"></div>
+                <div class="loading-text">Redirigiendo...</div>
+                <div class="countdown" id="countdown">5</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Not Found Page -->
+    <div class="not-found-page" id="notFoundPage">
+        <div class="not-found-card">
+            <div class="not-found-content">
+                <div class="not-found-icon">😞</div>
+                <h1 class="not-found-title">¡Oops!</h1>
+                <p class="not-found-message">
+                    La página que buscas no existe o el enlace ha expirado.
+                </p>
+                <button class="btn-home" onclick="goHome()">
+                    🏠 Volver al inicio
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuración de la API (valores generados por Terraform)
+        const API_CONFIG = {
+            SHORTEN_ENDPOINT: 'https://hwk68la162.execute-api.us-east-1.amazonaws.com/shorten',
+            REDIRECT_ENDPOINT: 'https://hwk68la162.execute-api.us-east-1.amazonaws.com',
+            BASE_SHORT_URL: 'https://d1w0l832are5e0.cloudfront.net/short',
+            // Modo mock local: si true, la app no llama a una API remota y
+            // guarda/lee los mapeos en localStorage (útil para probar offline).
+            MOCK_MODE: false
+        };
+
+        // Estado para la redirección (intervalo) — evita condiciones de carrera
+        let _redirectInterval = null;
+
+        // Check if we're on a /short/{codigo} route
+        window.addEventListener('DOMContentLoaded', () => {
+            const path = window.location.pathname;
+            const shortMatch = path.match(/\/short\/([a-zA-Z0-9]+)/);
+            
+            if (shortMatch) {
+                const codigo = shortMatch[1];
+                handleRedirect(codigo);
+            }
+        });
+
+        // Handle URL shortening
+        document.getElementById('shortenForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const urlInput = document.getElementById('urlInput');
+            const url = urlInput.value.trim();
+            
+            // Reset states
+            document.getElementById('resultBox').classList.remove('show');
+            document.getElementById('errorMessage').classList.remove('show');
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('shortenBtn').disabled = true;
+
+            try {
+                let data;
+
+                if (API_CONFIG.MOCK_MODE) {
+                    // Simular llamada a API en modo mock
+                    await new Promise(r => setTimeout(r, 600));
+                    const codigo = Math.random().toString(36).substring(2, 8);
+                    data = { codigo };
+
+                    // Guardar el mapeo local para permitir redirecciones en modo mock
+                    try {
+                        localStorage.setItem(`short_${data.codigo}`, url);
+                    } catch (err) {
+                        console.warn('No se pudo escribir en localStorage:', err);
+                    }
+                } else {
+                    // Call API to shorten URL
+                    const response = await fetch(API_CONFIG.SHORTEN_ENDPOINT, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ url: url })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Error al acortar la URL');
+                    }
+
+                    data = await response.json();
+                    // If the API returns a code, we also save mapping locally for convenience
+                    try {
+                        if (data && data.codigo) localStorage.setItem(`short_${data.codigo}`, url);
+                    } catch (err) {
+                        console.warn('No se pudo escribir en localStorage:', err);
+                    }
+                }
+
+                // Assuming the API returns { codigo: "abc123" }
+                const shortUrl = `${API_CONFIG.BASE_SHORT_URL}/${data.codigo}`;
+
+                // Show result
+                document.getElementById('shortUrl').href = shortUrl;
+                document.getElementById('shortUrl').textContent = shortUrl;
+                document.getElementById('resultBox').classList.add('show');
+
+            } catch (error) {
+                console.error('Error:', error);
+                showError('No se pudo acortar la URL. Por favor intenta de nuevo.');
+            } finally {
+                document.getElementById('loading').classList.remove('show');
+                document.getElementById('shortenBtn').disabled = false;
+            }
+        });
+
+        // Copy to clipboard
+        document.getElementById('copyBtn').addEventListener('click', async () => {
+            const shortUrl = document.getElementById('shortUrl').textContent;
+            const copyBtn = document.getElementById('copyBtn');
+            
+            try {
+                await navigator.clipboard.writeText(shortUrl);
+                copyBtn.textContent = '✓ Copiado';
+                copyBtn.classList.add('copied');
+                
+                setTimeout(() => {
+                    copyBtn.textContent = 'Copiar';
+                    copyBtn.classList.remove('copied');
+                }, 2000);
+            } catch (error) {
+                console.error('Error al copiar:', error);
+            }
+        });
+
+        // Handle redirect with 5 second countdown
+        async function handleRedirect(codigo) {
+            console.log('[handleRedirect] start for code=', codigo);
+            document.getElementById('mainPage').style.display = 'none';
+            document.getElementById('loadingPage').classList.add('show');
+
+            try {
+                let realUrl;
+
+                if (API_CONFIG.MOCK_MODE) {
+                    // Buscar en localStorage el URL mapeado
+                    try {
+                        realUrl = localStorage.getItem(`short_${codigo}`);
+                    } catch (err) {
+                        console.warn('Error leyendo localStorage:', err);
+                    }
+
+                    if (!realUrl) {
+                        throw new Error('URL not found (mock)');
+                    }
+                } else {
+                    // Fetch the real URL from API
+                    console.log('[handleRedirect] fetching', `${API_CONFIG.REDIRECT_ENDPOINT}/${codigo}`);
+                    const response = await fetch(`${API_CONFIG.REDIRECT_ENDPOINT}/${codigo}`);
+                    console.log('[handleRedirect] response status', response.status);
+                    if (!response.ok) {
+                        throw new Error('URL not found');
+                    }
+                    const data = await response.json();
+                    console.log('[handleRedirect] response body', data);
+                    realUrl = data.url;
+                }
+
+                // Start 5 second countdown (solo si realUrl existe)
+                if (realUrl) {
+                    console.log('[handleRedirect] realUrl=', realUrl);
+                    let countdown = 5;
+                    const countdownEl = document.getElementById('countdown');
+                    const progressFill = document.getElementById('progressFill');
+
+                    // Asegurar que no haya otro intervalo corriendo
+                    if (_redirectInterval) {
+                        clearInterval(_redirectInterval);
+                        _redirectInterval = null;
+                    }
+
+                    _redirectInterval = setInterval(() => {
+                        countdown--;
+                        console.log('[handleRedirect] tick', countdown);
+                        countdownEl.textContent = countdown;
+                        progressFill.style.width = `${(5 - countdown) * 20}%`;
+
+                        if (countdown <= 0) {
+                            console.log('[handleRedirect] redirecting to', realUrl);
+                            clearInterval(_redirectInterval);
+                            _redirectInterval = null;
+                            // ocultar páginas antes de redirigir
+                            document.getElementById('loadingPage').classList.remove('show');
+                            document.getElementById('notFoundPage').classList.remove('show');
+                            window.location.href = realUrl;
+                        }
+                    }, 1000);
+                } else {
+                    // Si por algún motivo no hay URL real, mostramos not found
+                    showNotFound();
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                // Limpiar cualquier intervalo de redirección antes de mostrar "no encontrada"
+                if (_redirectInterval) {
+                    clearInterval(_redirectInterval);
+                    _redirectInterval = null;
+                }
+                showNotFound();
+            }
+        }
+
+        // Show not found page
+        function showNotFound() {
+            // Limpiar intervalo si existe
+            if (_redirectInterval) {
+                clearInterval(_redirectInterval);
+                _redirectInterval = null;
+            }
+            // Asegurar que la loading page no permanezca visible
+            document.getElementById('loadingPage').classList.remove('show');
+            // Mostrar la página de not found
+            document.getElementById('notFoundPage').classList.add('show');
+            // Ocultar el main por si acaso
+            document.getElementById('mainPage').style.display = 'none';
+        }
+
+        // Go back to home
+        function goHome() {
+            window.location.href = '/';
+        }
+
+        // Show error message
+        function showError(message) {
+            const errorEl = document.getElementById('errorMessage');
+            errorEl.textContent = message;
+            errorEl.classList.add('show');
+            
+            setTimeout(() => {
+                errorEl.classList.remove('show');
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

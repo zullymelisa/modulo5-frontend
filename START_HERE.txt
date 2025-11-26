@@ -1,0 +1,143 @@
+🎯 INSTRUCCIONES FINALES - SUBIR A GITHUB
+
+Hola! Tu proyecto está 100% listo para subir a GitHub. Aquí está lo que falta:
+
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ LO QUE YA ESTÁ HECHO:
+
+1. ✓ Git inicializado localmente
+2. ✓ Commit inicial creado (hash: 4bc3242)
+3. ✓ Rama "main" configurada
+4. ✓ Todos los archivos staged
+5. ✓ .gitignore configurado (excluye terraform.tfstate, .aws, etc.)
+6. ✓ Workflow de GitHub Actions ready (.github/workflows/deploy.yml)
+7. ✓ Documentación completa (README.md, PASO_A_PASO.md, GITHUB_SETUP.md)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🚀 LO QUE DEBES HACER AHORA (2 pasos):
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ PASO 1: Crear Repositorio en GitHub (2 minutos)                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+1. Abre: https://github.com/new
+2. Rellena estos campos:
+   ┌──────────────────────────────────────────────────┐
+   │ Repository name: modulo5-frontend                │
+   │ Description: URL Shortener - Terraform + Lambda  │
+   │ Visibility: Public                               │
+   │ Initialize repository: ☐ NO (sin check)          │
+   └──────────────────────────────────────────────────┘
+3. Click en "Create repository"
+
+4. ⚠️ IMPORTANTE: En la página siguiente, verás instrucciones.
+   Copia la URL que dice "…or push an existing repository from the command line"
+   (será algo como: https://github.com/TU_USUARIO/modulo5-frontend.git)
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ PASO 2: Hacer Push desde PowerShell (2 minutos)                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+1. Abre PowerShell y ejecuta EXACTAMENTE esto:
+
+   cd "C:\Users\Asus\Downloads\Module 5\modulo5-frontend"
+   git remote add origin https://github.com/TU_USUARIO/modulo5-frontend.git
+   git push -u origin main
+
+   ⚠️ Reemplaza "TU_USUARIO" con tu username de GitHub
+
+2. Si ves "done" sin errores = ✅ ¡Éxito!
+
+3. Abre https://github.com/TU_USUARIO/modulo5-frontend
+   Deberías ver todos tus archivos ahí.
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🔐 PASO 3 EXTRA: Configurar Secrets en GitHub (5 minutos - IMPORTANTE)
+
+Sin esto, el workflow no funcionará.
+
+1. Ve a: https://github.com/TU_USUARIO/modulo5-frontend/settings/secrets/actions
+
+2. Click en "New repository secret" (botón verde)
+
+3. Agrega ESTOS 5 SECRETS (uno por uno):
+
+   ┌─────────────────────────────────────────────┐
+   │ Secret 1: AWS_ACCESS_KEY_ID                 │
+   │ Value: [Tu clave IAM - ver GITHUB_SECRETS.txt]
+   ├─────────────────────────────────────────────┤
+   │ Secret 2: AWS_SECRET_ACCESS_KEY             │
+   │ Value: [Tu clave secreta - ver GITHUB_SECRETS.txt]
+   ├─────────────────────────────────────────────┤
+   │ Secret 3: API_SHORTEN_ENDPOINT              │
+   │ Value: https://hwk68la162.execute-api.us-east-1.amazonaws.com/shorten
+   ├─────────────────────────────────────────────┤
+   │ Secret 4: API_REDIRECT_ENDPOINT             │
+   │ Value: https://hwk68la162.execute-api.us-east-1.amazonaws.com
+   ├─────────────────────────────────────────────┤
+   │ Secret 5: CLOUDFRONT_DOMAIN                 │
+   │ Value: d1w0l832are5e0.cloudfront.net        │
+   └─────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════════════════
+
+✨ VERIFICAR QUE TODO FUNCIONA (opcional pero recomendado)
+
+1. Ve a la pestaña "Actions" en tu repo
+2. Deberías ver un workflow "Deploy Frontend Module 5"
+3. Si ves ✅ verde = ¡PERFECTO! CI/CD está funcionando
+
+Si ves ❌ rojo, probablemente uno de los secrets está mal.
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📚 ARCHIVOS DE REFERENCIA EN TU CARPETA:
+
+- PASO_A_PASO.md      ← Guía completa y detallada
+- GITHUB_SETUP.md     ← Instrucciones más extensas
+- GITHUB_SECRETS.txt  ← Valores de los secrets
+- README.md           ← Documentación del proyecto
+- QUICK_REFERENCE.sh  ← Comandos rápidos
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🎉 DESPUÉS DE ESTO:
+
+Cada vez que hagas cambios, solo ejecuta:
+
+   git add .
+   git commit -m "Descripción del cambio"
+   git push
+
+Y GitHub Actions automáticamente:
+✅ Valida Terraform
+✅ Aplica cambios en AWS
+✅ Sincroniza frontend a S3
+✅ Invalida CloudFront
+✅ Comenta PRs con la URL live
+
+═══════════════════════════════════════════════════════════════════════════════
+
+¿Tienes dudas?
+
+- ¿Cómo encontrar mis credenciales AWS? → Ver GITHUB_SECRETS.txt
+- ¿Qué hace el workflow? → Ver README.md o PASO_A_PASO.md
+- ¿Qué es cada secret? → Ver GITHUB_SETUP.md
+
+═══════════════════════════════════════════════════════════════════════════════
+
+Estado actual:
+- Git: ✅ Inicializado
+- Commit inicial: ✅ Hecho (4bc3242)
+- Rama main: ✅ Configurada
+- Workflow: ✅ Ready
+- Documentación: ✅ Completa
+
+Próximo paso: Crear repo en GitHub y hacer push 🚀
+
+═══════════════════════════════════════════════════════════════════════════════
+
+Creado: 25 de noviembre de 2025
