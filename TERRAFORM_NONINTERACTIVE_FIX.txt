@@ -1,0 +1,82 @@
+✅ ARREGLADO: Terraform Non-Interactive para CI/CD
+
+═══════════════════════════════════════════════════════════════════════════════
+
+EL PROBLEMA:
+- Terraform esperaba input del usuario (interactivo)
+- En GitHub Actions no hay manera de proveer input
+- El workflow se quedaba esperando indefinidamente
+
+LA SOLUCIÓN:
+✅ Agregué valor por defecto a `bucket_name` en variables.tf
+✅ Todas las comandos de Terraform ahora con `-input=false`
+✅ Terraform init con `-input=false` también
+✅ Se removió la dependencia de `-var-file` para ser más robusta
+
+═══════════════════════════════════════════════════════════════════════════════
+
+CAMBIOS REALIZADOS:
+
+1. variables.tf (línea 9):
+   default = "url-shortener-frontend-asus-20251125-01"
+
+2. deploy.yml - Terraform Init:
+   terraform init -input=false
+
+3. deploy.yml - Terraform Plan:
+   terraform plan -input=false -lock=false -out=tfplan
+
+4. deploy.yml - Terraform Apply:
+   terraform apply -input=false -lock=false -auto-approve tfplan
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🚀 STATUS ACTUAL:
+
+✅ Código pusheado
+✅ Workflow triggered (b6e6c30)
+⏳ Ejecutándose en GitHub Actions
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📊 QUÉ VER AHORA:
+
+1. Ve a: https://github.com/zullymelisa/modulo5-frontend/actions
+
+2. Verás el workflow "Deploy Frontend Module 5" ejecutándose
+
+3. Espera 3-5 minutos
+
+4. Resultados esperados:
+   ✅ VERDE = ¡Éxito! El workflow completó sin errores
+   ⚠️  AMARILLO = En progreso, espera más
+   ❌ ROJO = Error, abre el log para ver qué falló
+
+═══════════════════════════════════════════════════════════════════════════════
+
+SI VES ERROR "Configure AWS Credentials":
+→ Falta configurar los 5 secrets en GitHub Settings
+→ Ve a: Settings → Secrets and variables → Actions
+→ Configura: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, etc.
+
+SI VES ERROR "Permission Denied":
+→ Probablemente el usuario IAM no tiene permisos
+→ Verifica que module5 tenga acceso a S3, CloudFront, DynamoDB, Lambda
+
+SI VES ERROR "terraform apply":
+→ Probablemente conflicto con terraform.tfstate
+→ El estado actual de AWS y el local no coinciden
+→ Cuéntame y lo arreglamos
+
+═══════════════════════════════════════════════════════════════════════════════
+
+COMMITS REALIZADOS:
+
+db797ba: Docs: Add terraform.tfvars fix explanation
+57602e7: Fix: Make Terraform completely non-interactive for CI/CD
+b6e6c30: Trigger workflow with non-interactive Terraform
+
+═══════════════════════════════════════════════════════════════════════════════
+
+PRÓXIMO PASO:
+Espera 5-10 minutos y cuéntame qué ves en Actions (verde ✅ o rojo ❌)
