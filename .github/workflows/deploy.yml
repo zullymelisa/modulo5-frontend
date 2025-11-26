@@ -1,23 +1,17 @@
-name: Deploy Frontend Module 5
+name: Deploy Frontend to S3 + CloudFront
 
 on:
   push:
     branches:
       - main
-      - develop
-  pull_request:
-    branches:
-      - main
-  workflow_dispatch:  # Permite ejecutar manualmente
 
 env:
   AWS_REGION: us-east-1
 
 jobs:
   deploy:
-    name: Deploy Frontend (S3 + CloudFront)
+    name: Deploy to S3 and Invalidate CloudFront
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
 
     steps:
       - name: Checkout code
@@ -30,14 +24,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Update API Endpoints in HTML
-        run: |
-          sed -i "s|SHORTEN_ENDPOINT: '[^']*'|SHORTEN_ENDPOINT: '${{ secrets.API_SHORTEN_ENDPOINT }}'|g" index.html
-          sed -i "s|REDIRECT_ENDPOINT: '[^']*'|REDIRECT_ENDPOINT: '${{ secrets.API_REDIRECT_ENDPOINT }}'|g" index.html
-          sed -i "s|BASE_SHORT_URL: '[^']*'|BASE_SHORT_URL: 'https://${{ secrets.CLOUDFRONT_DOMAIN }}'|g" index.html
-          echo "✅ API endpoints updated"
-
-      - name: Upload to S3
+      - name: Sync files to S3
         run: |
           aws s3 sync . s3://${{ secrets.S3_BUCKET_NAME }}/ \
             --exclude ".git/*" \
@@ -47,26 +34,20 @@ jobs:
             --exclude ".gitignore" \
             --delete \
             --cache-control "public, max-age=3600"
+        env:
+          AWS_DEFAULT_REGION: ${{ env.AWS_REGION }}
 
       - name: Invalidate CloudFront Cache
         run: |
           aws cloudfront create-invalidation \
             --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
             --paths "/*"
+        env:
+          AWS_DEFAULT_REGION: ${{ env.AWS_REGION }}
 
-      - name: Show Deployment URL
+      - name: Print deployment summary
         run: |
-          echo "### 🚀 Deployment Successful!" >> $GITHUB_STEP_SUMMARY
-          echo "**Live URL:** https://${{ secrets.CLOUDFRONT_DOMAIN }}" >> $GITHUB_STEP_SUMMARY
-
-      - name: Comment PR with Deployment URL
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '🚀 **Preview deployed!**\n\n**URL:** https://${{ secrets.CLOUDFRONT_DOMAIN }}'
-            })
+          echo "✅ Deployment completed!"
+          echo "S3 Bucket: ${{ secrets.S3_BUCKET_NAME }}"
+          echo "CloudFront Domain: ${{ secrets.CLOUDFRONT_DOMAIN }}"
+          echo "Live URL: https://${{ secrets.CLOUDFRONT_DOMAIN }}"
